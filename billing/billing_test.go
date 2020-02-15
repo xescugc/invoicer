@@ -15,9 +15,10 @@ func TestNew(t *testing.T) {
 		ur   = mock.NewUserRepository(ctrl)
 		cr   = mock.NewCustomerRepository(ctrl)
 		ir   = mock.NewInvoiceRepository(ctrl)
+		tr   = mock.NewTemplateRepository(ctrl)
 	)
 
-	b := billing.New(ur, cr, ir)
+	b := billing.New(ur, cr, ir, tr)
 	assert.NotNil(t, b)
 
 	defer ctrl.Finish()

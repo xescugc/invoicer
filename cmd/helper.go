@@ -34,7 +34,12 @@ func initializeFilesystemBilling() (billing.Billing, error) {
 		return nil, err
 	}
 
-	return billing.New(ur, cr, ir), nil
+	tr, err := filesystem.NewTemplateRepository(baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return billing.New(ur, cr, ir, tr), nil
 }
 
 // DefaultEditor is vim because we're adults ;)

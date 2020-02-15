@@ -12,6 +12,7 @@ type MockBilling struct {
 	Users     *mock.UserRepository
 	Customers *mock.CustomerRepository
 	Invoices  *mock.InvoiceRepository
+	Templates *mock.TemplateRepository
 
 	Ctrl    *gomock.Controller
 	Billing billing.Billing
@@ -23,13 +24,15 @@ func NewMockBilling(t *testing.T) MockBilling {
 		ur   = mock.NewUserRepository(ctrl)
 		cr   = mock.NewCustomerRepository(ctrl)
 		ir   = mock.NewInvoiceRepository(ctrl)
-		b    = billing.New(ur, cr, ir)
+		tr   = mock.NewTemplateRepository(ctrl)
+		b    = billing.New(ur, cr, ir, tr)
 	)
 
 	return MockBilling{
 		Users:     ur,
 		Customers: cr,
 		Invoices:  ir,
+		Templates: tr,
 
 		Ctrl: ctrl,
 

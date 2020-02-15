@@ -20,6 +20,7 @@ func init() {
 		userCmd,
 		customersCmd,
 		invoicesCmd,
+		templatesCmd,
 		uiCmd,
 	)
 
