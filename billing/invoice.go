@@ -1,15 +1,23 @@
 package billing
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"text/template"
 
+	"github.com/gosimple/slug"
 	"github.com/xescugc/invoicer/invoice"
 )
 
 func (b *billing) CreateInvoice(ctx context.Context, i *invoice.Invoice, cusCan string) error {
-	c, err := b.GetCustomer(ctx, cusCan)
+	if !slug.IsSlug(cusCan) {
+		return ErrInvalidCustomerCanonical
+	}
+
+	c, err := b.customers.Find(ctx, cusCan)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not get Customer: %w", err)
 	}
 
 	// TODO Check number and time
@@ -98,4 +106,34 @@ func (b *billing) DeleteInvoice(ctx context.Context, number string) error {
 	}
 
 	return nil
+}
+
+func (b *billing) ViewInvoice(ctx context.Context, invoiceNumber, templateCan string) ([]byte, error) {
+	if !isValidInvoiceNumber(invoiceNumber) {
+		return nil, ErrInvalidInvoiceNumber
+	}
+
+	in, err := b.invoices.Find(ctx, invoiceNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	tpl, err := b.templates.Find(ctx, templateCan)
+	if err != nil {
+		return nil, fmt.Errorf("could not get Templates: %w", err)
+	}
+
+	t, err := template.New("invoice.html").Parse(string(tpl.Template))
+	if err != nil {
+		return nil, err
+	}
+
+	buff := bytes.Buffer{}
+
+	err = t.Execute(&buff, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return buff.Bytes(), nil
 }

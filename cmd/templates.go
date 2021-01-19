@@ -81,6 +81,29 @@ var (
 		},
 	}
 
+	templatesViewCmd = &cobra.Command{
+		Use:  "view",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			billing, err := initializeFilesystemBilling()
+			if err != nil {
+				return err
+			}
+
+			can := args[0]
+
+			ctx := context.Background()
+			t, err := billing.GetTemplate(ctx, can)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(string(t.Template))
+
+			return nil
+		},
+	}
+
 	templatesListCmd = &cobra.Command{
 		Use: "list",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -178,6 +201,7 @@ func init() {
 	templatesCmd.AddCommand(
 		templatesNewCmd,
 		templatesGetCmd,
+		templatesViewCmd,
 		templatesListCmd,
 		templatesEditCmd,
 		templatesDeleteCmd,

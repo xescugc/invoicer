@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -17,6 +19,9 @@ var (
 
 	invoicesNewCmd = &cobra.Command{
 		Use: "new",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlag("customer", cmd.Flags().Lookup("customer"))
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			billing, err := initializeFilesystemBilling()
 			if err != nil {
@@ -106,6 +111,9 @@ var (
 
 	invoicesEditCmd = &cobra.Command{
 		Use: "edit",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlag("customer", cmd.Flags().Lookup("customer"))
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			billing, err := initializeFilesystemBilling()
 			if err != nil {
@@ -165,6 +173,39 @@ var (
 			return nil
 		},
 	}
+
+	invoicesViewCmd = &cobra.Command{
+		Use: "view",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlag("template", cmd.Flags().Lookup("template"))
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			billing, err := initializeFilesystemBilling()
+			if err != nil {
+				return err
+			}
+
+			number := args[0]
+
+			ctx := context.Background()
+
+			ib, err := billing.ViewInvoice(ctx, number, viper.GetString("template"))
+			if err != nil {
+				return err
+			}
+
+			file, err := ioutil.TempFile(os.TempDir(), "")
+			if err != nil {
+				return err
+			}
+
+			file.Write(ib)
+
+			fmt.Println(fmt.Sprintf("file://%s", file.Name()))
+
+			return nil
+		},
+	}
 )
 
 func init() {
@@ -174,12 +215,14 @@ func init() {
 		invoicesListCmd,
 		invoicesEditCmd,
 		invoicesDeleteCmd,
+		invoicesViewCmd,
 	)
 
 	invoicesNewCmd.Flags().StringP("customer", "c", "", "The Customer canonical, required")
 	invoicesNewCmd.Flags().SetAnnotation("customer", cobra.BashCompOneRequiredFlag, []string{"true"})
-	viper.BindPFlag("customer", invoicesNewCmd.Flags().Lookup("customer"))
 
 	invoicesEditCmd.Flags().StringP("customer", "c", "", "The Customer canonical")
-	viper.BindPFlag("customer", invoicesEditCmd.Flags().Lookup("customer"))
+
+	invoicesViewCmd.Flags().StringP("template", "t", "", "The Template canonical")
+	invoicesViewCmd.Flags().SetAnnotation("template", cobra.BashCompOneRequiredFlag, []string{"true"})
 }

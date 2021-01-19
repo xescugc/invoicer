@@ -2,6 +2,7 @@ package billing_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,7 @@ import (
 	"github.com/xescugc/invoicer/billing"
 	"github.com/xescugc/invoicer/customer"
 	"github.com/xescugc/invoicer/invoice"
+	"github.com/xescugc/invoicer/template"
 	"github.com/xescugc/invoicer/user"
 	"golang.org/x/text/currency"
 )
@@ -223,5 +225,50 @@ func TestDeleteInvoice(t *testing.T) {
 
 		err := b.Billing.DeleteInvoice(ctx, inum)
 		assert.EqualError(t, err, billing.ErrInvalidInvoiceNumber.Error())
+	})
+}
+func TestViewInvoice(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		var (
+			b      = NewMockBilling(t)
+			ctx    = context.Background()
+			inum   = "number"
+			tplcan = "tplcan"
+			ec     = customer.Customer{
+				Name:      "name",
+				Canonical: "can",
+				VATNumber: "vatnumber",
+			}
+			eu = user.User{
+				Name:      "name",
+				Address:   "address",
+				VATNumber: "vatnumber",
+			}
+			in = invoice.Invoice{
+				Number:   inum,
+				Customer: ec,
+				User:     eu,
+				Items: []invoice.Item{
+					invoice.Item{
+						Description: "Some charge",
+						Price:       30,
+						Currency:    currency.EUR,
+					},
+				},
+			}
+			tpl = template.Template{
+				Name:      "name",
+				Canonical: tplcan,
+				Template:  []byte("{{ .Number }} {{ .Customer.Name }} {{ .User.Name }}"),
+			}
+		)
+		defer b.Finish()
+
+		b.Invoices.EXPECT().Find(ctx, inum).Return(&in, nil)
+		b.Templates.EXPECT().Find(ctx, tplcan).Return(&tpl, nil)
+
+		tplin, err := b.Billing.ViewInvoice(ctx, inum, tplcan)
+		require.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf("%s %s %s", in.Number, in.Customer.Name, in.User.Name), string(tplin))
 	})
 }
