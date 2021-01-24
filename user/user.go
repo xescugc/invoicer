@@ -1,7 +1,9 @@
 package user
 
+import "github.com/xescugc/invoicer/address"
+
 type User struct {
 	Name      string
-	Address   string
+	Address   address.Address
 	VATNumber string
 }

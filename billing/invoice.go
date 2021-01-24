@@ -14,6 +14,9 @@ func (b *billing) CreateInvoice(ctx context.Context, i *invoice.Invoice, cusCan 
 	if !slug.IsSlug(cusCan) {
 		return ErrInvalidCustomerCanonical
 	}
+	if i.Number == "" {
+		return ErrInvalidInvoiceNumber
+	}
 
 	c, err := b.customers.Find(ctx, cusCan)
 	if err != nil {

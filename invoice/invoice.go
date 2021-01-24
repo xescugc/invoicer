@@ -6,7 +6,7 @@ import (
 
 	"github.com/xescugc/invoicer/customer"
 	"github.com/xescugc/invoicer/user"
-	"golang.org/x/text/currency"
+	"github.com/xescugc/marshaler"
 )
 
 type Invoice struct {
@@ -19,15 +19,15 @@ type Invoice struct {
 
 	Items []Item
 	VAT   float64
+
+	Currency marshaler.CurrencyUnit
 }
 
 func (i Invoice) Total() string {
 	total := 0.0
-	curr := currency.XXX
 	for _, it := range i.Items {
 		total += it.Price
-		curr = it.Currency
 	}
 
-	return fmt.Sprintf("%g %s", total, curr)
+	return fmt.Sprintf("%g %s", total, i.Currency)
 }

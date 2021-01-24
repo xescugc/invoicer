@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/xescugc/invoicer/invoice"
+	"github.com/xescugc/marshaler"
 	"golang.org/x/text/currency"
 )
 
@@ -19,12 +20,13 @@ type Invoice struct {
 	Items []Item
 
 	VAT float64
+
+	Currency string
 }
 
 type Item struct {
 	Description string
 	Price       float64
-	Currency    string
 }
 
 func NewInvoice() Invoice {
@@ -42,17 +44,17 @@ func NewInvoiceFromDomain(i *invoice.Invoice) Invoice {
 		itm := Item{
 			Description: it.Description,
 			Price:       it.Price,
-			Currency:    it.Currency.String(),
 		}
 
 		items = append(items, itm)
 	}
 
 	return Invoice{
-		Number: i.Number,
-		VAT:    i.VAT,
-		Items:  items,
-		Date:   i.Date.Format(DefaultDateFormat),
+		Number:   i.Number,
+		VAT:      i.VAT,
+		Items:    items,
+		Date:     i.Date.Format(DefaultDateFormat),
+		Currency: i.Currency.String(),
 	}
 }
 
@@ -60,14 +62,9 @@ func (i Invoice) ToDomain() (*invoice.Invoice, error) {
 	items := make([]invoice.Item, 0, len(i.Items))
 
 	for _, it := range i.Items {
-		cr, err := currency.ParseISO(it.Currency)
-		if err != nil {
-			return nil, err
-		}
 		itm := invoice.Item{
 			Description: it.Description,
 			Price:       it.Price,
-			Currency:    cr,
 		}
 
 		items = append(items, itm)
@@ -78,10 +75,16 @@ func (i Invoice) ToDomain() (*invoice.Invoice, error) {
 		return nil, err
 	}
 
+	cr, err := currency.ParseISO(i.Currency)
+	if err != nil {
+		return nil, err
+	}
+
 	return &invoice.Invoice{
-		Number: i.Number,
-		VAT:    i.VAT,
-		Items:  items,
-		Date:   d,
+		Number:   i.Number,
+		VAT:      i.VAT,
+		Items:    items,
+		Date:     d,
+		Currency: marshaler.NewCurrencyUnit(cr),
 	}, nil
 }
